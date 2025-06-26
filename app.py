@@ -1,7 +1,6 @@
 import streamlit as st
 import openai
 
-# 🔐 Вставь сюда свой API-ключ
 openai.api_key = st.secrets["openai_api_key"]
 
 st.title("Whisper Translator")

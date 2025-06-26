@@ -55,4 +55,19 @@ if st.button("💬"):
                 gpt_reply = response.choices[0].message.content
                 st.session_state.messages.append({"role": "assistant", "content": gpt_reply})
 
-                save_history(st.sess_
+                save_history(st.session_state.messages)
+
+                st.markdown(f"GPT whispers back:\n\n> {gpt_reply}")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+
+st.markdown("---")
+st.header("Your chat history:")
+
+for msg in st.session_state.messages:
+    role = msg["role"]
+    content = msg["content"]
+    if role == "user":
+        st.markdown(f"**You:** {content}")
+    elif role == "assistant":
+        st.markdown(f"**Whisper:** {content}")

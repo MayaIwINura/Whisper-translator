@@ -40,7 +40,11 @@ if "messages" not in st.session_state:
             }
         ]
 
-text = st.text_area("Write your revelation:")
+# Инициализируем текстовое поле в сессии, если нет
+if "input_text" not in st.session_state:
+    st.session_state.input_text = ""
+
+text = st.text_area("Write your revelation:", value=st.session_state.input_text, key="input_text")
 
 if st.button("💬"):
     if text.strip():
@@ -57,7 +61,11 @@ if st.button("💬"):
 
                 save_history(st.session_state.messages)
 
-                st.markdown(f"GPT whispers back:\n\n> {gpt_reply}")
+                # Очистить текстовое поле после отправки
+                st.session_state.input_text = ""
+
+                st.experimental_rerun()  # перезапускает приложение, чтобы очистить поле и обновить интерфейс
+
             except Exception as e:
                 st.error(f"An error occurred: {e}")
 

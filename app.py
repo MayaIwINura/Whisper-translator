@@ -15,14 +15,11 @@ def save_history(history):
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
-# OpenAI client
 client = openai.OpenAI(api_key=st.secrets["openai_api_key"])
 
-# UI
 st.title("Whisper Translator")
 st.write("Today, you can share what your soul feels.")
 
-# Session state
 if "messages" not in st.session_state:
     st.session_state.messages = load_history() or [
         {
@@ -42,19 +39,12 @@ if "text_handled" not in st.session_state:
 if "last_bot_reply" not in st.session_state:
     st.session_state.last_bot_reply = ""
 
-# Input
+# Связываем input с session_state для очистки
 text = st.text_input("Write your revelation:", key="text_input")
 
-# Send by button
-if st.button("💬") and text.strip():
-    st.session_state.messages.append({"role": "user", "content": text})
-    st.session_state.text_handled = False
-    st.rerun()
-
-# Send by Enter
-elif text.strip() and not st.session_state.text_handled:
-    st.session_state.text_handled = True
-    st.session_state.messages.append({"role": "user", "content": text})
+# Функция для отправки сообщения
+def send_message(user_text):
+    st.session_state.messages.append({"role": "user", "content": user_text})
 
     with st.spinner("Listening to the soul..."):
         try:
@@ -67,17 +57,30 @@ elif text.strip() and not st.session_state.text_handled:
             st.session_state.last_bot_reply = gpt_reply
 
             save_history(st.session_state.messages)
-            st.rerun()
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
-# ✨ Live Whisper Response (без повтора твоего сообщения)
+# Отправка по кнопке
+if st.button("💬") and text.strip():
+    send_message(text)
+    st.session_state.text_input = ""  # очищаем поле после отправки
+    st.session_state.text_handled = False
+    st.rerun()
+
+# Отправка по Enter
+elif text.strip() and not st.session_state.text_handled:
+    st.session_state.text_handled = True
+    send_message(text)
+    st.session_state.text_input = ""  # очищаем поле
+    st.rerun()
+
+# Показываем последний ответ Whisper (без повтора твоего сообщения)
 if st.session_state.last_bot_reply:
     st.markdown("---")
     st.subheader("🪶 Whisper responds:")
-    st.markdown(f"{st.session_state.last_bot_reply}")
+    st.markdown(st.session_state.last_bot_reply)
 
-# 📖 Full history
+# Показываем всю историю
 if st.session_state.messages:
     st.markdown("---")
     st.subheader("📖 Full chat history:")
@@ -86,4 +89,3 @@ if st.session_state.messages:
             st.markdown(f"**You:** {msg['content']}")
         elif msg["role"] == "assistant":
             st.markdown(f"**Whisper:** {msg['content']}")
-

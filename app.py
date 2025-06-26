@@ -3,6 +3,9 @@ import openai
 import json
 import os
 
+if "text_input" not in st.session_state:
+    st.session_state.text_input = ""
+
 HISTORY_FILE = "chat_history.json"
 
 def load_history():

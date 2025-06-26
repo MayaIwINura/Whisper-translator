@@ -15,20 +15,17 @@ def save_history(history):
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
-# Используй свой ключ в secrets.toml
 client = openai.OpenAI(api_key=st.secrets["openai_api_key"])
 
-# Стили для всего фона и пузырьков сообщений
 st.markdown(
     """
     <style>
     html, body {
       height: 100%;
       margin: 0;
-      background: black;
-      background: linear-gradient(to top, #4b0082 0%, black 70%);
-      color: white;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: white;
+      color: #333;
+      font-family: 'Inter', sans-serif;
       overflow-x: hidden;
     }
 
@@ -37,32 +34,38 @@ st.markdown(
       padding: 1rem;
     }
 
+    @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+
+    /* Анимация появления */
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    .message {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
     .user-bubble {
-        background: linear-gradient(135deg, rgba(147,112,219,0.3), rgba(186,85,211,0.5));
-        border-radius: 15px 15px 15px 0px;
+        background: #f0f0f0;
+        border-radius: 16px 16px 16px 0;
         padding: 12px 15px;
         max-width: 70%;
         margin: 6px 0;
-        color: white;
-        box-shadow:
-          0 0 5px 1px rgba(186,85,211,0.6),
-          inset 0 0 10px rgba(255,255,255,0.2);
-        backdrop-filter: blur(5px);
+        color: #333;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         float: left;
         clear: both;
     }
 
     .bot-bubble {
-        background: linear-gradient(135deg, rgba(144,238,144,0.3), rgba(60,179,113,0.5));
-        border-radius: 15px 15px 0px 15px;
+        background: white;
+        border-radius: 16px 16px 0 16px;
         padding: 12px 15px;
         max-width: 70%;
         margin: 6px 0;
-        color: white;
-        box-shadow:
-          0 0 5px 1px rgba(60,179,113,0.6),
-          inset 0 0 10px rgba(255,255,255,0.2);
-        backdrop-filter: blur(5px);
+        color: #333;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
         float: right;
         clear: both;
     }
@@ -71,6 +74,20 @@ st.markdown(
         content: "";
         clear: both;
         display: table;
+    }
+
+    button {
+        cursor: pointer;
+        font-size: 20px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        border: none;
+        background-color: #6200EE;
+        color: white;
+        transition: background-color 0.3s ease;
+    }
+    button:hover {
+        background-color: #3700B3;
     }
     </style>
     """,
@@ -117,13 +134,10 @@ def send_message():
 
     st.session_state.text_input = ""
 
-# Текстовое поле с отправкой по Enter
 st.text_input("Write your revelation:", key="text_input", on_change=send_message)
 
-# Кнопка отправки с эмоджи (альтернатива)
 st.button("💬", on_click=send_message)
 
-# Отображение истории сообщений с пузырьками
 if st.session_state.messages:
     st.markdown("---")
     st.subheader("📖 Chat history:")
@@ -132,8 +146,8 @@ if st.session_state.messages:
         role = msg["role"]
         content = msg["content"]
         if role == "user":
-            st.markdown(f'<div class="user-bubble clearfix">{content}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="user-bubble message clearfix">{content}</div>', unsafe_allow_html=True)
         elif role == "assistant":
-            st.markdown(f'<div class="bot-bubble clearfix">{content}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="bot-bubble message clearfix">{content}</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)

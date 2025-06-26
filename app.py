@@ -16,17 +16,17 @@ def save_history(history):
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
-# Инициализируем OpenAI-клиент
+# Подключение к OpenAI
 client = openai.OpenAI(api_key=st.secrets["openai_api_key"])
 
-# Заголовок
+# Интерфейс
 st.title("Whisper Translator")
 st.write("Today, you can share what your soul feels.")
 
-# Загрузка истории из файла
+# История сообщений
 history = load_history()
 
-# Инициализация состояния
+# Инициализация состояний
 if "messages" not in st.session_state:
     st.session_state.messages = history or [
         {
@@ -44,18 +44,18 @@ if "messages" not in st.session_state:
 if "text_handled" not in st.session_state:
     st.session_state.text_handled = False
 
-# Поле для ввода
+# Поле ввода
 text = st.text_input("Write your revelation:", key="text_input")
 
-# Обработка отправки по кнопке
+# Отправка по кнопке
 if st.button("💬") and text.strip():
     st.session_state.messages.append({"role": "user", "content": text})
-    st.session_state.text_handled = False  # Разрешить Enter снова
-    st.experimental_rerun()
+    st.session_state.text_handled = False
+    st.rerun()
 
-# Обработка отправки по Enter
+# Отправка по Enter
 elif text.strip() and not st.session_state.text_handled:
-    st.session_state.text_handled = True  # Чтобы не дублировалось
+    st.session_state.text_handled = True
 
     with st.spinner("Listening to the soul..."):
         try:
@@ -66,11 +66,11 @@ elif text.strip() and not st.session_state.text_handled:
             gpt_reply = response.choices[0].message.content
             st.session_state.messages.append({"role": "assistant", "content": gpt_reply})
             save_history(st.session_state.messages)
-            st.experimental_rerun()
+            st.rerun()
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
-# Показать историю
+# История диалога
 st.markdown("---")
 st.header("Your chat history:")
 

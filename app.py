@@ -8,12 +8,21 @@ st.write("Today, you can share what your soul feels.")
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "You are a poetic and kind soul guide. Respond with empathy, deep insight, or a spiritual question."}
+        {
+            "role": "system",
+            "content": (
+                "You are a wise and caring friend, who listens deeply. "
+                "You speak kindly and gently, like someone who understands the soul. "
+                "You ask thoughtful, open-ended questions that help the user explore their feelings and problems. "
+                "Sometimes you share short philosophical insights, but always warmly and supportively. "
+                "Make the user feel safe and understood, as if they talk to a close and trusted friend."
+            )
+        }
     ]
 
 text = st.text_area("Write your revelation:")
 
-if st.button("Send"):
+if st.button("➡️"):  # Кнопка со стрелочкой
     if text.strip():
         st.session_state.messages.append({"role": "user", "content": text})
 

@@ -23,9 +23,10 @@ st.markdown(
     html, body {
       height: 100%;
       margin: 0;
-      background: white;
-      color: #333;
-      font-family: 'Inter', sans-serif;
+      background: black;
+      background: linear-gradient(to top, #4b0082 0%, black 70%);
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       overflow-x: hidden;
     }
 
@@ -33,8 +34,6 @@ st.markdown(
       background: transparent !important;
       padding: 1rem;
     }
-
-    @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
 
     /* Анимация появления */
     @keyframes fadeIn {
@@ -47,25 +46,31 @@ st.markdown(
     }
 
     .user-bubble {
-        background: #f0f0f0;
-        border-radius: 16px 16px 16px 0;
+        background: linear-gradient(135deg, rgba(147,112,219,0.3), rgba(186,85,211,0.5));
+        border-radius: 15px 15px 15px 0px;
         padding: 12px 15px;
         max-width: 70%;
         margin: 6px 0;
-        color: #333;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        color: white;
+        box-shadow:
+          0 0 5px 1px rgba(186,85,211,0.6),
+          inset 0 0 10px rgba(255,255,255,0.2);
+        backdrop-filter: blur(5px);
         float: left;
         clear: both;
     }
 
     .bot-bubble {
-        background: white;
-        border-radius: 16px 16px 0 16px;
+        background: linear-gradient(135deg, rgba(144,238,144,0.3), rgba(60,179,113,0.5));
+        border-radius: 15px 15px 0px 15px;
         padding: 12px 15px;
         max-width: 70%;
         margin: 6px 0;
-        color: #333;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        color: white;
+        box-shadow:
+          0 0 5px 1px rgba(60,179,113,0.6),
+          inset 0 0 10px rgba(255,255,255,0.2);
+        backdrop-filter: blur(5px);
         float: right;
         clear: both;
     }

@@ -22,7 +22,7 @@ if "messages" not in st.session_state:
 
 text = st.text_area("Write your revelation:")
 
-if st.button("➡м"):  # Кнопка со стрелочкой
+if st.button("💬"):  # Кнопка со стрелочкой
     if text.strip():
         st.session_state.messages.append({"role": "user", "content": text})
 

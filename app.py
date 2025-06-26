@@ -2,6 +2,7 @@ import streamlit as st
 import openai
 import json
 import os
+import time
 
 HISTORY_FILE = "chat_history.json"
 
@@ -35,10 +36,52 @@ st.markdown(
       padding: 1rem;
     }
 
-    /* Анимация появления */
+    /* Плавное появление */
     @keyframes fadeIn {
       from {opacity: 0; transform: translateY(10px);}
       to {opacity: 1; transform: translateY(0);}
+    }
+
+    /* Мерцание */
+    @keyframes glow {
+      0%, 100% {
+        box-shadow: 0 0 5px 2px rgba(255,255,255,0.3);
+      }
+      50% {
+        box-shadow: 0 0 15px 6px rgba(255,255,255,0.7);
+      }
+    }
+
+    /* Анимация трёх точек */
+    .typing-indicator::after {
+      content: '...';
+      animation: dots 1.5s steps(5, end) infinite;
+      font-weight: bold;
+      margin-left: 4px;
+    }
+    @keyframes dots {
+      0%, 20% {
+        color: rgba(255,255,255,0);
+        text-shadow:
+          .25em 0 0 rgba(255,255,255,0),
+          .5em 0 0 rgba(255,255,255,0);
+      }
+      40% {
+        color: white;
+        text-shadow:
+          .25em 0 0 rgba(255,255,255,0),
+          .5em 0 0 rgba(255,255,255,0);
+      }
+      60% {
+        text-shadow:
+          .25em 0 0 white,
+          .5em 0 0 rgba(255,255,255,0);
+      }
+      80%, 100% {
+        text-shadow:
+          .25em 0 0 white,
+          .5em 0 0 white;
+      }
     }
 
     .message {
@@ -58,6 +101,7 @@ st.markdown(
         backdrop-filter: blur(5px);
         float: left;
         clear: both;
+        animation: glow 3s ease-in-out infinite alternate;
     }
 
     .bot-bubble {
@@ -73,6 +117,7 @@ st.markdown(
         backdrop-filter: blur(5px);
         float: right;
         clear: both;
+        animation: glow 3s ease-in-out infinite alternate;
     }
 
     .clearfix::after {
@@ -90,11 +135,23 @@ st.markdown(
         background-color: #6200EE;
         color: white;
         transition: background-color 0.3s ease;
+        animation: glow 2.5s ease-in-out infinite alternate;
     }
     button:hover {
         background-color: #3700B3;
     }
     </style>
+
+    <!-- Скрипт автоскролла к последнему сообщению -->
+    <script>
+    const scrollToBottom = () => {
+      const chat = document.getElementById('chat-history');
+      if (chat) {
+        chat.scrollTop = chat.scrollHeight;
+      }
+    }
+    window.onload = scrollToBottom;
+    </script>
     """,
     unsafe_allow_html=True,
 )
@@ -117,12 +174,17 @@ if "messages" not in st.session_state:
         }
     ]
 
+if "is_typing" not in st.session_state:
+    st.session_state.is_typing = False
+
 def send_message():
     user_text = st.session_state.text_input.strip()
     if not user_text:
         return
 
     st.session_state.messages.append({"role": "user", "content": user_text})
+    st.session_state.text_input = ""
+    st.session_state.is_typing = True
 
     with st.spinner("Listening to the soul..."):
         try:
@@ -137,22 +199,32 @@ def send_message():
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
-    st.session_state.text_input = ""
+    st.session_state.is_typing = False
 
 st.text_input("Write your revelation:", key="text_input", on_change=send_message)
 
 st.button("💬", on_click=send_message)
 
-if st.session_state.messages:
-    st.markdown("---")
-    st.subheader("📖 Chat history:")
+st.markdown("---")
+st.subheader("📖 Chat history:")
 
-    for msg in st.session_state.messages:
-        role = msg["role"]
-        content = msg["content"]
-        if role == "user":
-            st.markdown(f'<div class="user-bubble message clearfix">{content}</div>', unsafe_allow_html=True)
-        elif role == "assistant":
-            st.markdown(f'<div class="bot-bubble message clearfix">{content}</div>', unsafe_allow_html=True)
+# Контейнер для чата с id для автоскролла
+st.markdown('<div id="chat-history" style="height:400px; overflow-y:auto;">', unsafe_allow_html=True)
 
+for msg in st.session_state.messages:
+    role = msg["role"]
+    content = msg["content"]
+    if role == "user":
+        st.markdown(f'<div class="user-bubble message clearfix">{content}</div>', unsafe_allow_html=True)
+    elif role == "assistant":
+        st.markdown(f'<div class="bot-bubble message clearfix">{content}</div>', unsafe_allow_html=True)
+
+# Индикатор набора текста
+if st.session_state.is_typing:
+    st.markdown(
+        '<div class="bot-bubble message clearfix typing-indicator">Bot is typing</div>',
+        unsafe_allow_html=True,
+    )
+
+st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)

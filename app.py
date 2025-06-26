@@ -15,23 +15,28 @@ def save_history(history):
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
+# Используй свой ключ в secrets.toml
 client = openai.OpenAI(api_key=st.secrets["openai_api_key"])
 
-# Добавляем стили для страницы и пузырьков
+# Стили для всего фона и пузырьков сообщений
 st.markdown(
     """
     <style>
-    /* Фон с градиентом снизу */
-    .main {
-        background: black;
-        background: linear-gradient(to top, #4b0082 0%, black 70%);
-        min-height: 100vh;
-        padding: 1rem;
-        color: white;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: black;
+      background: linear-gradient(to top, #4b0082 0%, black 70%);
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
     }
 
-    /* Пузырьки сообщений пользователя */
+    .main {
+      background: transparent !important;
+      padding: 1rem;
+    }
+
     .user-bubble {
         background: linear-gradient(135deg, rgba(147,112,219,0.3), rgba(186,85,211,0.5));
         border-radius: 15px 15px 15px 0px;
@@ -47,7 +52,6 @@ st.markdown(
         clear: both;
     }
 
-    /* Пузырьки сообщений бота */
     .bot-bubble {
         background: linear-gradient(135deg, rgba(144,238,144,0.3), rgba(60,179,113,0.5));
         border-radius: 15px 15px 0px 15px;
@@ -63,13 +67,11 @@ st.markdown(
         clear: both;
     }
 
-    /* Очистка флоатов */
     .clearfix::after {
         content: "";
         clear: both;
         display: table;
     }
-
     </style>
     """,
     unsafe_allow_html=True,
@@ -93,9 +95,6 @@ if "messages" not in st.session_state:
         }
     ]
 
-if "last_bot_reply" not in st.session_state:
-    st.session_state.last_bot_reply = ""
-
 def send_message():
     user_text = st.session_state.text_input.strip()
     if not user_text:
@@ -111,7 +110,6 @@ def send_message():
             )
             gpt_reply = response.choices[0].message.content
             st.session_state.messages.append({"role": "assistant", "content": gpt_reply})
-            st.session_state.last_bot_reply = gpt_reply
 
             save_history(st.session_state.messages)
         except Exception as e:
@@ -119,13 +117,13 @@ def send_message():
 
     st.session_state.text_input = ""
 
-# Поле ввода с on_change — отправка по Enter
+# Текстовое поле с отправкой по Enter
 st.text_input("Write your revelation:", key="text_input", on_change=send_message)
 
-# Кнопка отправки с эмоджи
+# Кнопка отправки с эмоджи (альтернатива)
 st.button("💬", on_click=send_message)
 
-# Выводим историю с пузырьками
+# Отображение истории сообщений с пузырьками
 if st.session_state.messages:
     st.markdown("---")
     st.subheader("📖 Chat history:")

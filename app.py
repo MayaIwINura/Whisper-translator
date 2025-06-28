@@ -1,38 +1,52 @@
 import streamlit as st
 import openai
-import json
 import os
+import json
+from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Whisper Translator", layout="centered")
 
-# 🔑 API-ключ из секрета
+# 🔑 API key
 openai.api_key = st.secrets["openai_api_key"]
 client = openai.OpenAI(api_key=openai.api_key)
 
-# Путь к файлу истории
+# 📁 История
 HISTORY_FILE = "chat_history.json"
+BOOK_FILE = "soul_book.json"
 
-# Загрузка истории
 def load_history():
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r") as f:
             return json.load(f)
     return []
 
-# Сохранение истории
 def save_history(history):
     with open(HISTORY_FILE, "w") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
-# Инициализация истории в сессии
+def load_book():
+    if os.path.exists(BOOK_FILE):
+        with open(BOOK_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_book(book):
+    with open(BOOK_FILE, "w") as f:
+        json.dump(book, f, ensure_ascii=False, indent=2)
+
+# 🤖 Session
 if "messages" not in st.session_state:
     st.session_state.messages = load_history()
+if "text_input" not in st.session_state:
+    st.session_state.text_input = ""
+if "soul_book" not in st.session_state:
+    st.session_state.soul_book = load_book()
 
-# 💅 Стилизация
+# 🌟 Стили
 st.markdown("""
 <style>
-body {
-    background: linear-gradient(to top, #4b0082 0%, black 90%);
+html, body, [class*="css"] {
+    background: linear-gradient(to top, #4b0082 0%, black 90%) !important;
     color: white;
 }
 .chat-container {
@@ -41,7 +55,7 @@ body {
     gap: 10px;
 }
 .bubble-user {
-    background-color: rgba(186, 85, 211, 0.25); /* сиреневый */
+    background-color: rgba(186, 85, 211, 0.25);
     color: white;
     padding: 12px 18px;
     border-radius: 18px 18px 18px 4px;
@@ -50,7 +64,7 @@ body {
     animation: fadeIn 0.6s ease-in-out;
 }
 .bubble-bot {
-    background-color: rgba(173, 216, 230, 0.25); /* голубой */
+    background-color: rgba(173, 216, 230, 0.25);
     color: white;
     padding: 12px 18px;
     border-radius: 18px 18px 4px 18px;
@@ -63,48 +77,25 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
-/* Кнопка */
-button[kind="secondaryFormSubmit"] {
-    animation: glowButton 5s infinite ease-in-out;
-    border: none;
-    background-color: transparent;
-    font-size: 24px;
-    transition: transform 0.2s;
-}
-button[kind="secondaryFormSubmit"]:hover {
-    transform: scale(1.1);
-}
-@keyframes glowButton {
-    0% { text-shadow: 0 0 4px rgba(255,255,255,0.2); }
-    50% { text-shadow: 0 0 12px rgba(255,255,255,0.5); }
-    100% { text-shadow: 0 0 4px rgba(255,255,255,0.2); }
-}
-/* Лунный индикатор */
 .typing-indicator {
-    font-size: 22px;
+    font-size: 20px;
     margin: 20px 0;
     text-align: center;
-    animation: moonCycle 2s infinite steps(8);
+    animation: blink 1.5s infinite;
 }
-@keyframes moonCycle {
-    0% { content: "🌑"; }
-    12% { content: "🌒"; }
-    25% { content: "🌓"; }
-    37% { content: "🌔"; }
-    50% { content: "🌕"; }
-    62% { content: "🌖"; }
-    75% { content: "🌗"; }
-    87% { content: "🌘"; }
-    100% { content: "🌑"; }
+@keyframes blink {
+    0% { opacity: 0.2; }
+    50% { opacity: 1; }
+    100% { opacity: 0.2; }
 }
 </style>
 """, unsafe_allow_html=True)
 
-# 🧠 Название и подзаголовок
+# 📚 Название
 st.title("Whisper Translator")
 st.write("Today, you can share what your soul feels.")
 
-# 📜 Отображение истории
+# 📒 История
 with st.container():
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     for msg in st.session_state.messages:
@@ -114,27 +105,60 @@ with st.container():
         st.markdown(f'<div class="{bubble_class}">{content}</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 📝 Ввод формы
-form = st.form(key="chat_form", clear_on_submit=True)
-user_input = form.text_input("Write your revelation:", key="text_input", label_visibility="collapsed")
-submit = form.form_submit_button("💬")
-
-# 💬 Обработка отправки
-if submit and user_input.strip():
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    save_history(st.session_state.messages)
-
-    # 🌙 Имитируем "написание"
-    placeholder = st.empty()
-    placeholder.markdown('<div class="typing-indicator">🌑 Thinking...</div>', unsafe_allow_html=True)
-
-    try:
+# 📅 Проверка начала недели
+now = datetime.now()
+week_start = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
+if week_start not in st.session_state.soul_book:
+    if len(st.session_state.messages) >= 3:
+        summary_prompt = """Summarize the essence of this week's conversation as a poetic, reflective chapter. Title it."""
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=st.session_state.messages,
+            messages=[
+                {"role": "system", "content": "You are a poetic soul narrator."},
+                *st.session_state.messages[-10:],
+                {"role": "user", "content": summary_prompt},
+            ]
         )
-        reply = response.choices[0].message.content
-        st.session_state.messages.append({"role": "assistant", "content": reply})
-        save_history(st.session_state.messages)
-    finally:
-        placeholder.empty()
+        chapter = response.choices[0].message.content
+        st.session_state.soul_book[week_start] = chapter
+        save_book(st.session_state.soul_book)
+
+# 📝 Поле ввода
+form = st.form("chat_form", clear_on_submit=False)
+text_input = form.text_input(
+    "Write your revelation:",
+    value=st.session_state.text_input,
+    label_visibility="collapsed"
+)
+submit = form.form_submit_button("💬")
+
+if submit and text_input.strip():
+    user_message = text_input.strip()
+    st.session_state.messages.append({"role": "user", "content": user_message})
+    st.session_state.text_input = ""
+    save_history(st.session_state.messages)
+
+    with st.spinner("The soul is whispering..."):
+        placeholder = st.empty()
+        placeholder.markdown('<div class="typing-indicator">🌜 Thinking...</div>', unsafe_allow_html=True)
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a poetic and wise soul guide. Respond kindly and ask thoughtful questions."},
+                    *st.session_state.messages
+                ]
+            )
+            reply = response.choices[0].message.content
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+            save_history(st.session_state.messages)
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+        finally:
+            placeholder.empty()
+
+# 📕 Книга души
+with st.expander("📖 Soul Book: Weekly Chapters"):
+    for week, chapter in st.session_state.soul_book.items():
+        st.markdown(f"### Week of {week}\n{chapter}")

@@ -1,164 +1,171 @@
 import streamlit as st
 import openai
-import os
 import json
-from datetime import datetime, timedelta
+import os
 
-st.set_page_config(page_title="Whisper Translator", layout="centered")
-
-# 🔑 API key
-openai.api_key = st.secrets["openai_api_key"]
-client = openai.OpenAI(api_key=openai.api_key)
-
-# 📁 История
 HISTORY_FILE = "chat_history.json"
-BOOK_FILE = "soul_book.json"
 
 def load_history():
     if os.path.exists(HISTORY_FILE):
-        with open(HISTORY_FILE, "r") as f:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     return []
 
 def save_history(history):
-    with open(HISTORY_FILE, "w") as f:
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
-def load_book():
-    if os.path.exists(BOOK_FILE):
-        with open(BOOK_FILE, "r") as f:
-            return json.load(f)
-    return {}
+client = openai.OpenAI(api_key=st.secrets["openai_api_key"])
 
-def save_book(book):
-    with open(BOOK_FILE, "w") as f:
-        json.dump(book, f, ensure_ascii=False, indent=2)
+st.markdown(
+    """
+    <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: black;
+      background: linear-gradient(to top, #4b0082 0%, black 70%);
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
+    }
 
-# 🤖 Session
-if "messages" not in st.session_state:
-    st.session_state.messages = load_history()
-if "text_input" not in st.session_state:
-    st.session_state.text_input = ""
-if "soul_book" not in st.session_state:
-    st.session_state.soul_book = load_book()
+    .main {
+      background: transparent !important;
+      padding: 1rem;
+    }
 
-# 🌟 Стили
-st.markdown("""
-<style>
-html, body, [class*="css"] {
-    background: linear-gradient(to top, #4b0082 0%, black 90%) !important;
-    color: white;
-}
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.bubble-user {
-    background-color: rgba(186, 85, 211, 0.25);
-    color: white;
-    padding: 12px 18px;
-    border-radius: 18px 18px 18px 4px;
-    width: fit-content;
-    max-width: 80%;
-    animation: fadeIn 0.6s ease-in-out;
-}
-.bubble-bot {
-    background-color: rgba(173, 216, 230, 0.25);
-    color: white;
-    padding: 12px 18px;
-    border-radius: 18px 18px 4px 18px;
-    width: fit-content;
-    max-width: 80%;
-    align-self: flex-end;
-    animation: fadeIn 0.6s ease-in-out;
-}
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.typing-indicator {
-    font-size: 20px;
-    margin: 20px 0;
-    text-align: center;
-    animation: blink 1.5s infinite;
-}
-@keyframes blink {
-    0% { opacity: 0.2; }
-    50% { opacity: 1; }
-    100% { opacity: 0.2; }
-}
-</style>
-""", unsafe_allow_html=True)
+    /* Анимация появления */
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
 
-# 📚 Название
+    /* Анимация мерцания (glow) */
+    @keyframes glow {
+      0%, 100% {
+        box-shadow: 0 0 5px 2px rgba(255,255,255,0.3);
+      }
+      50% {
+        box-shadow: 0 0 15px 6px rgba(255,255,255,0.7);
+      }
+    }
+
+    .message {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .user-bubble {
+        background: linear-gradient(135deg, rgba(147,112,219,0.3), rgba(186,85,211,0.5));
+        border-radius: 15px 15px 15px 0px;
+        padding: 12px 15px;
+        max-width: 70%;
+        margin: 6px 0;
+        color: white;
+        box-shadow:
+          0 0 5px 1px rgba(186,85,211,0.6),
+          inset 0 0 10px rgba(255,255,255,0.2);
+        backdrop-filter: blur(5px);
+        float: left;
+        clear: both;
+        animation: glow 3s ease-in-out infinite alternate;
+    }
+
+    .bot-bubble {
+        background: linear-gradient(135deg, rgba(144,238,144,0.3), rgba(60,179,113,0.5));
+        border-radius: 15px 15px 0px 15px;
+        padding: 12px 15px;
+        max-width: 70%;
+        margin: 6px 0;
+        color: white;
+        box-shadow:
+          0 0 5px 1px rgba(60,179,113,0.6),
+          inset 0 0 10px rgba(255,255,255,0.2);
+        backdrop-filter: blur(5px);
+        float: right;
+        clear: both;
+        animation: glow 3s ease-in-out infinite alternate;
+    }
+
+    .clearfix::after {
+        content: "";
+        clear: both;
+        display: table;
+    }
+
+    button {
+        cursor: pointer;
+        font-size: 20px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        border: none;
+        background-color: #6200EE;
+        color: white;
+        transition: background-color 0.3s ease;
+        animation: glow 2.5s ease-in-out infinite alternate;
+    }
+    button:hover {
+        background-color: #3700B3;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown('<div class="main">', unsafe_allow_html=True)
+
 st.title("Whisper Translator")
 st.write("Today, you can share what your soul feels.")
 
-# 📒 История
-with st.container():
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-    for msg in st.session_state.messages:
-        role = msg["role"]
-        content = msg["content"]
-        bubble_class = "bubble-user" if role == "user" else "bubble-bot"
-        st.markdown(f'<div class="{bubble_class}">{content}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+if "messages" not in st.session_state:
+    st.session_state.messages = load_history() or [
+        {
+            "role": "system",
+            "content": (
+                "You are a wise and caring friend, who listens deeply. "
+                "You speak kindly and gently, like someone who understands the soul. "
+                "You ask thoughtful, open-ended questions that help the user explore their feelings and problems. "
+                "Sometimes you share short philosophical insights, but always warmly and supportively."
+            ),
+        }
+    ]
 
-# 📅 Проверка начала недели
-now = datetime.now()
-week_start = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
-if week_start not in st.session_state.soul_book:
-    if len(st.session_state.messages) >= 3:
-        summary_prompt = """Summarize the essence of this week's conversation as a poetic, reflective chapter. Title it."""
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a poetic soul narrator."},
-                *st.session_state.messages[-10:],
-                {"role": "user", "content": summary_prompt},
-            ]
-        )
-        chapter = response.choices[0].message.content
-        st.session_state.soul_book[week_start] = chapter
-        save_book(st.session_state.soul_book)
+def send_message():
+    user_text = st.session_state.text_input.strip()
+    if not user_text:
+        return
 
-# 📝 Поле ввода
-form = st.form("chat_form", clear_on_submit=False)
-text_input = form.text_input(
-    "Write your revelation:",
-    value=st.session_state.text_input,
-    label_visibility="collapsed"
-)
-submit = form.form_submit_button("💬")
+    st.session_state.messages.append({"role": "user", "content": user_text})
 
-if submit and text_input.strip():
-    user_message = text_input.strip()
-    st.session_state.messages.append({"role": "user", "content": user_message})
-    st.session_state.text_input = ""
-    save_history(st.session_state.messages)
-
-    with st.spinner("The soul is whispering..."):
-        placeholder = st.empty()
-        placeholder.markdown('<div class="typing-indicator">🌜 Thinking...</div>', unsafe_allow_html=True)
-
+    with st.spinner("Listening to the soul..."):
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a poetic and wise soul guide. Respond kindly and ask thoughtful questions."},
-                    *st.session_state.messages
-                ]
+                messages=st.session_state.messages,
             )
-            reply = response.choices[0].message.content
-            st.session_state.messages.append({"role": "assistant", "content": reply})
+            gpt_reply = response.choices[0].message.content
+            st.session_state.messages.append({"role": "assistant", "content": gpt_reply})
+
             save_history(st.session_state.messages)
         except Exception as e:
             st.error(f"An error occurred: {e}")
-        finally:
-            placeholder.empty()
 
-# 📕 Книга души
-with st.expander("📖 Soul Book: Weekly Chapters"):
-    for week, chapter in st.session_state.soul_book.items():
-        st.markdown(f"### Week of {week}\n{chapter}")
+    st.session_state.text_input = ""
+
+st.text_input("Write your revelation:", key="text_input", on_change=send_message)
+
+st.button("💬", on_click=send_message)
+
+if st.session_state.messages:
+    st.markdown("---")
+    st.subheader("📖 Chat history:")
+
+    for msg in st.session_state.messages:
+        role = msg["role"]
+        content = msg["content"]
+        if role == "user":
+            st.markdown(f'<div class="user-bubble message clearfix">{content}</div>', unsafe_allow_html=True)
+        elif role == "assistant":
+            st.markdown(f'<div class="bot-bubble message clearfix">{content}</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
